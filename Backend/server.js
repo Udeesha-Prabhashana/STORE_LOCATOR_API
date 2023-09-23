@@ -13,13 +13,17 @@ const pool = createPool({
   connectionLimit: 10,
 });
 
-pool.query("SELECT * FROM stores", (err, result, fields) => {
-  if (err) {
-    console.error("Error:", err);
-    return;
-  }
-  console.log("Result:", result);
-});
+// pool.query("SELECT * FROM stores", (err, result, fields) => {
+//   if (err) {
+//     console.error("Error:", err);
+//     return;
+//   }
+//   console.log("Result:", result);
+// });
+
+// app.get('/api/stores', (req, res) => {
+//   res.send("Hello")
+// })
 
 const app = express();
 
