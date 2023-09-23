@@ -21,6 +21,10 @@ pool.query("SELECT * FROM stores", (err, result, fields) => {
   console.log("Result:", result);
 });
 
+// app.get('/api/stores', (req, res) => {
+//   res.send("Hello")
+// })
+
 const app = express();
 
 app.use(express.json());
