@@ -38,16 +38,17 @@ router.get("/", (req, res) => {
 // @desc  Create a store
 // @route POST /api/v1/stores
 // @access Public
-router.post("/api/v1/stores", (req, res) => {
-  const { name, location } = req.body; // Adjust the body parameters as needed
+router.post("/", (req, res) => {
+  console.log("POST request to /api/v1/stores received");
+  const { address } = req.body; // Adjust the body parameters as needed
 
-  if (!name || !location) {
+  if (!address) {
     res.status(400).json({ error: "Name and location are required" });
     return;
   }
 
-  const insertQuery = "INSERT INTO stores (name, location) VALUES (?, ?)";
-  pool.query(insertQuery, [name, location], (err, result, fields) => {
+  const insertQuery = "INSERT INTO stores (address) VALUES (?)";
+  pool.query(insertQuery, [address], (err, result, fields) => {
     if (err) {
       console.error("Error:", err);
       res.status(500).json({ error: "Server error" });
@@ -55,7 +56,7 @@ router.post("/api/v1/stores", (req, res) => {
     }
     res.status(201).json({
       success: true,
-      data: { name, location },
+      data: { address},
     });
   });
 });
