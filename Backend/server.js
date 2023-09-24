@@ -39,7 +39,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // Use the store routes defined in stores.js
 app.use('/api/v1/stores', storeRoutes);
 
-app.listen(8880, () => {
+app.listen(3000, () => {
   console.log("Connected to backend!");
 });
 
