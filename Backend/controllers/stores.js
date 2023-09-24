@@ -1,6 +1,8 @@
 const { Router } = require("express");
+
 // const pool = require("../server"); // Import the MySQL pool from server.js
 const router = Router();
+const geocoder = require('../utils/geocoder')
 
 const { createPool } = require("mysql2");
 
@@ -35,31 +37,53 @@ router.get("/", (req, res) => {
   });
 });
 
-// @desc  Create a store
+// @desc Create a store
 // @route POST /api/v1/stores
 // @access Public
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   console.log("POST request to /api/v1/stores received");
-  const { address } = req.body; // Adjust the body parameters as needed
+  const { address } = req.body;
 
   if (!address) {
-    res.status(400).json({ error: "Name and location are required" });
+    res.status(400).json({ error: "Address is required" });
     return;
   }
 
-  const insertQuery = "INSERT INTO stores (address) VALUES (?)";
-  pool.query(insertQuery, [address], (err, result, fields) => {
-    if (err) {
-      console.error("Error:", err);
-      res.status(500).json({ error: "Server error" });
-      return;
-    }
-    res.status(201).json({
-      success: true,
-      data: { address},
+  try {
+    // Set your Google Maps API key
+
+    // Use the geocoder to convert the address to coordinates
+    const geocodeResponse = await geocoder.geocode(address);
+    console.log(geocodeResponse);
+    const { latitude, longitude, formattedAddress } = geocodeResponse[0];
+
+    // Insert the data into the database
+    const insertQuery =
+      "INSERT INTO stores (address, location, formattedAddress) VALUES (?, POINT(?, ?), ?)";
+    const values = [address, longitude, latitude , formattedAddress];
+
+    pool.query(insertQuery, values, (err, result) => {
+      if (err) {
+        console.error("Error:", err);
+        res.status(500).json({ error: "Server error" });
+      } else {
+        res.status(201).json({
+          success: true,
+          data: {
+            address: undefined,
+            location: { type: "Point", coordinates: [longitude, latitude] },
+            formattedAddress,
+          },
+        });
+      }
     });
-  });
+  } catch (error) {
+    console.error("Geocoding error:", error.message); // Log the specific error message
+    res.status(500).json({ error: "Geocoding error", message: error.message });
+  }
+
 });
+
 
 module.exports = {
   getStores: router.get("/"),
