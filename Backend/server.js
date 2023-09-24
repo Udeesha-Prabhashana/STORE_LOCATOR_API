@@ -1,4 +1,4 @@
-// const path = require("path");
+const path = require("path");
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
@@ -34,6 +34,7 @@ app.get('/api/stores', (req, res) => {
 app.use(express.json());
 app.use(cors());
 
+app.use(express.static(path.join(__dirname, "public")));
 
 // Use the store routes defined in stores.js
 app.use('/api/v1/stores', storeRoutes);
