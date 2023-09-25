@@ -4,15 +4,15 @@ const { Router } = require("express");
 const router = Router();
 const geocoder = require('../utils/geocoder')
 
-const { createPool } = require("mysql2");
+const { Pool } = require("pg");
 
-const pool = createPool({
+const pool = new Pool({
   host: "localhost",
-  port: 3310, // Correct the port if needed
-  user: "root",
+  port: 5432, // PostgreSQL default port
+  user: "postgres",
   password: "Udee1234@#",
-  database: "location",
-  connectionLimit: 10,
+  database: "Test",
+  max: 10, // Maximum number of connections in the pool
 });
 
 // console.log(pool)
@@ -20,22 +20,41 @@ const pool = createPool({
 // @route GET /api/v1/stores
 // @access Public
 router.get("/", (req, res) => {
-   console.log("GET request to /api/v1/stores received");
-  const selectQuery = "SELECT * FROM stores";
+  console.log("GET request to /api/v1/stores received");
+  const selectQuery =
+    "SELECT address, ST_Y(location::geometry) AS latitude, ST_X(location::geometry) AS longitude FROM stores";
 
-  pool.query(selectQuery, (err, result, fields) => {
+  pool.query(selectQuery, (err, result) => {
     if (err) {
       console.error("Error:", err);
       res.status(500).json({ error: "Server error" });
       return;
     }
+
+    // Check if the result is an array (result.rows)
+    if (!Array.isArray(result.rows)) {
+      console.error("Query result is not an array:", result);
+      res.status(500).json({ error: "Invalid query result" });
+      return;
+    }
+
+    const storesWithLatLng = result.rows.map((store) => {
+      return {
+        address: store.address,
+        latitude: store.latitude,
+        longitude: store.longitude,
+      };
+    });
+
     res.status(200).json({
       success: true,
-      count: result.length,
-      data: result,
+      count: storesWithLatLng.length,
+      data: storesWithLatLng,
     });
   });
 });
+
+
 
 // @desc Create a store
 // @route POST /api/v1/stores
@@ -54,25 +73,38 @@ router.post("/", async (req, res) => {
 
     // Use the geocoder to convert the address to coordinates
     const geocodeResponse = await geocoder.geocode(address);
-    console.log(geocodeResponse);
     const { latitude, longitude, formattedAddress } = geocodeResponse[0];
+    console.log(latitude);
+    console.log(longitude);
+    console.log(formattedAddress);
 
     // Insert the data into the database
     const insertQuery =
-      "INSERT INTO stores (address, location, formattedAddress) VALUES (?, POINT(?, ?), ?)";
-    const values = [address, longitude, latitude , formattedAddress];
+      "INSERT INTO stores (address, location, formattedAddress) VALUES ($1, ST_GeomFromText($2), $3)";
+    const values = [
+      address,
+      `POINT(${longitude} ${latitude})`,
+      formattedAddress,
+    ];
+
+    
+    console.log("Inserting values:", values);
+
 
     pool.query(insertQuery, values, (err, result) => {
       if (err) {
         console.error("Error:", err);
         res.status(500).json({ error: "Server error" });
       } else {
+        console.log("Data inserted successfully");
         res.status(201).json({
           success: true,
           data: {
             address: undefined,
             location: { type: "Point", coordinates: [longitude, latitude] },
             formattedAddress,
+            latitude, // Include latitude in the response
+            longitude, // Include longitude in the response
           },
         });
       }

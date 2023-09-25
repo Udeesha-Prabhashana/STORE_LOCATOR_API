@@ -17,6 +17,7 @@
     "geocoder": "^0.2.3",
     "https": "^1.0.0",
     "mysql2": "^3.6.1",
-    "node-geocoder": "^4.2.0"
+    "node-geocoder": "^4.2.0",
+    "pg": "^8.11.3"
   }
 }
